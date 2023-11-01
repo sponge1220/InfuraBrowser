@@ -8,45 +8,63 @@
 <MudCard>
     <MudCardContent>
         <MudGrid>
-            <MudItem xs="2">
+            <MudItem xs="3">
+                <MudSelect @bind-Value="@chain" T="string" Label="chain" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@("ethereum")"/>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="3">
                 <MudSelect @bind-Value="@network" T="string" Label="network" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
                     <MudSelectItem Value="@("mainnet")"/>
                     <MudSelectItem Value="@("goerli")"/>
                     <MudSelectItem Value="@("sepolia")"/>
                 </MudSelect>
             </MudItem>
-            <MudItem xs="4">
+            <MudItem xs="6">
                 <MudTextField @bind-Value="infuraKey" Label="infuraKey" Variant="Variant.Outlined" Required="true"></MudTextField>
             </MudItem>
-            <MudItem xs="5">
-                <MudTextField @bind-Value="ethAddress" Label="ethAddress" Variant="Variant.Outlined" Required="true"></MudTextField>
+        </MudGrid>
+        <MudGrid>
+            <MudItem xs="11">
+                <MudTextField @bind-Value="address" Label="address" Variant="Variant.Outlined" Required="true"></MudTextField>
             </MudItem>
             <MudItem xs="1">
-                <MudIconButton Icon="@Icons.Material.Filled.Search" @onclick="GetBalance"/>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="@GetBalance">Get Data</MudButton>
             </MudItem>
         </MudGrid>
     </MudCardContent>
 </MudCard>
 <br/>
-@if (balanceFetched)
-{
-    <MudText>Balance: @balanceInEther ETH</MudText>
-}
-else
-{
-    <MudText>Please enter an Ethereum address and infuraKey".</MudText>
-}
+<MudText>Please enter an address and infuraKey. You can go to 
+    <MudLink Href="https://app.infura.io" Target="_blank">
+        https://app.infura.io
+    </MudLink>
+    to register an account and get the key to access</MudText>
+<br/>
+<MudGrid>
+    <MudItem xs="6">
+        <MudCard>
+            <MudCardContent>
+                <MudText>Address: @address</MudText>
+                <MudText>Balance: @balanceInEther ETH</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="6">
+
+    </MudItem>
+</MudGrid>
 
 @code {
-    private string? ethAddress;
+    private string? address;
     private string? infuraKey;
     private decimal balanceInEther;
-    private bool balanceFetched;
     private string network = "mainnet";
-
+    private string chain = "ethereum";
+    
     private async Task GetBalance()
     {
-        if (infuraKey == null || ethAddress == null)
+        if (infuraKey == null || address == null)
         {
             return;
         }
@@ -56,16 +74,15 @@ else
             jsonrpc = "2.0",
             id = 1,
             method = "eth_getBalance",
-            @params = new[] { ethAddress, "latest" }
+            @params = new[] { address, "latest" }
         };
 
         var requestJson = JsonSerializer.Serialize(requestObj);
 
         var response = await Http.PostAsync(
-            "https://mainnet.infura.io/v3/" + infuraKey,
+            "https://"+ network +".infura.io/v3/" + infuraKey,
             new StringContent(requestJson, Encoding.UTF8, "application/json")
             );
-
         var responseContent = await response.Content.ReadAsStringAsync();
 
         using var doc = JsonDocument.Parse(responseContent);
@@ -80,18 +97,14 @@ else
                 var wholeEther = BigInteger.DivRem(balanceInWei, weiPerEther, out var remainder);
                 var fractionEther = (decimal)remainder / (decimal)Math.Pow(10, 18);
                 var ether = (decimal)wholeEther + fractionEther;
-                
+
                 balanceInEther = ether;
-                balanceFetched = true;
-                
-                Snackbar.Add($"Successfully fetched balance.", Severity.Success);
+                Snackbar.Add($"Successfully fetched data.", Severity.Success);
             }
         }
         else
         {
-            balanceFetched = false;
-            
-            Snackbar.Add($"Failed to get balance.", Severity.Error);
+            Snackbar.Add($"Failed to fetched data.", Severity.Error);
         }
     }
 

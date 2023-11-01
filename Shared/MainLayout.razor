@@ -16,11 +16,12 @@
 
 <MudLayout>
     <MudAppBar Elevation="1" Class="custom-appbar">
-        <MudText>InfuraBrowser</MudText>
+        <MudImage Src="favicon.webp" Alt="infuraBrowser" Elevation="25" Width="50" Height="50" Class="rounded-lg"/>
         <MudSpacer/>
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="@Color.Dark" Link="https://github.com/sponge1220/InfuraBrowser"/>
     </MudAppBar>
     <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Large" Class="my-8 pt-8">
+        <MudContainer MaxWidth="MaxWidth.Large" Class="my-2 pt-2">
             @Body
         </MudContainer>
     </MudMainContent>
