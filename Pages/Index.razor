@@ -1,0 +1,98 @@
+﻿@page "/"
+@using System.Numerics
+@using System.Text
+@using System.Text.Json
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<MudCard>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="2">
+                <MudSelect @bind-Value="@network" T="string" Label="network" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter">
+                    <MudSelectItem Value="@("mainnet")"/>
+                    <MudSelectItem Value="@("goerli")"/>
+                    <MudSelectItem Value="@("sepolia")"/>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="4">
+                <MudTextField @bind-Value="infuraKey" Label="infuraKey" Variant="Variant.Outlined" Required="true"></MudTextField>
+            </MudItem>
+            <MudItem xs="5">
+                <MudTextField @bind-Value="ethAddress" Label="ethAddress" Variant="Variant.Outlined" Required="true"></MudTextField>
+            </MudItem>
+            <MudItem xs="1">
+                <MudIconButton Icon="@Icons.Material.Filled.Search" @onclick="GetBalance"/>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+<br/>
+@if (balanceFetched)
+{
+    <MudText>Balance: @balanceInEther ETH</MudText>
+}
+else
+{
+    <MudText>Please enter an Ethereum address and infuraKey".</MudText>
+}
+
+@code {
+    private string? ethAddress;
+    private string? infuraKey;
+    private decimal balanceInEther;
+    private bool balanceFetched;
+    private string network = "mainnet";
+
+    private async Task GetBalance()
+    {
+        if (infuraKey == null || ethAddress == null)
+        {
+            return;
+        }
+        
+        var requestObj = new
+        {
+            jsonrpc = "2.0",
+            id = 1,
+            method = "eth_getBalance",
+            @params = new[] { ethAddress, "latest" }
+        };
+
+        var requestJson = JsonSerializer.Serialize(requestObj);
+
+        var response = await Http.PostAsync(
+            "https://mainnet.infura.io/v3/" + infuraKey,
+            new StringContent(requestJson, Encoding.UTF8, "application/json")
+            );
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+
+        using var doc = JsonDocument.Parse(responseContent);
+        var root = doc.RootElement;
+        var weiPerEther = BigInteger.Pow(10, 18);
+        if (root.TryGetProperty("result", out var resultProperty))
+        {
+            var balanceHex = resultProperty.GetString();
+            if (balanceHex != null)
+            {
+                var balanceInWei = BigInteger.Parse("00" + balanceHex[2..], System.Globalization.NumberStyles.AllowHexSpecifier);
+                var wholeEther = BigInteger.DivRem(balanceInWei, weiPerEther, out var remainder);
+                var fractionEther = (decimal)remainder / (decimal)Math.Pow(10, 18);
+                var ether = (decimal)wholeEther + fractionEther;
+                
+                balanceInEther = ether;
+                balanceFetched = true;
+                
+                Snackbar.Add($"Successfully fetched balance.", Severity.Success);
+            }
+        }
+        else
+        {
+            balanceFetched = false;
+            
+            Snackbar.Add($"Failed to get balance.", Severity.Error);
+        }
+    }
+
+}

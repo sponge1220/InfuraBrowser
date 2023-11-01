@@ -1,0 +1,27 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+
+<style>
+    body {
+        background-color: #f4f6f6;
+    }
+    .custom-appbar {
+      background-color: white;
+      color: black;
+    }
+</style>
+
+<MudLayout>
+    <MudAppBar Elevation="1" Class="custom-appbar">
+        <MudText>InfuraBrowser</MudText>
+        <MudSpacer/>
+    </MudAppBar>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.Large" Class="my-8 pt-8">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
