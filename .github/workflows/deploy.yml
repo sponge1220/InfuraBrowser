@@ -3,7 +3,7 @@ name: deploy
 on:
   push:
     branches: [ main ]
-
+    
 jobs:
   deploy-to-github-pages:
 
@@ -15,12 +15,21 @@ jobs:
         uses: actions/setup-dotnet@v2
         with:
           dotnet-version: 7.0.x
-      
+
       - name: Publish InfuraBrowser
         run: dotnet publish InfuraBrowser.csproj -c Release -o release --nologo
+
+      - name: change index.html base href
+        run: sed -i 's/<base href="\/" \/>/<base href="\/InfuraBrowser\/" \/>/g' release/wwwroot/index.html
+
+      - name: add .nojekyll
+        run: touch release/wwwroot/.nojekyll
+
+      - name: replace index.html to 404.html
+        run: cp release/wwwroot/index.html release/wwwroot/404.html
 
       - name: Commit wwwroot to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4.3.3
         with:
-          BRANCH: gh-pages
-          FOLDER: release/wwwroot
+          branch: gh-pages
+          folder: release/wwwroot
